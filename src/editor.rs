@@ -107,7 +107,7 @@ impl Editor {
         Terminal::cursor_position(&Position::default());
         if self.should_quit {
             Terminal::clear_screen();
-            println!("Quitting...\r");
+            println!("editor closed\r");
         } else {
             self.draw_rows();
             self.draw_status_bar();
@@ -125,6 +125,10 @@ impl Editor {
         let pressed_key = Terminal::read_key()?;
         match pressed_key {
             Key::Ctrl('a') => self.should_quit = true,
+            Key::Char(c) => {
+                self.document.insert(&self.cursor_position, c);
+                self.move_cursor(Key::Right);
+            },
             Key::Up
             | Key::Down
             | Key::Left
