@@ -10,9 +10,5 @@ pub use editor::Position;
 pub use document::Document;
 pub use row::Row;
 fn main() {
-    dbg!("aaa".to_string().len());
-    dbg!("äää".to_string().len());
-    dbg!("y̆y̆y̆".to_string().len());
-    dbg!("❤❤❤".to_string().len());
-   // Editor::default().run();
+    Editor::default().run();
 }
