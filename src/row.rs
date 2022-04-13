@@ -1,30 +1,37 @@
 use std::cmp;
-
+use unicode_segmentation::UnicodeSegmentation;
 pub struct Row {
-  string: String,
+    string: String,
 }
 
 impl From<&str> for Row {
-  fn from(slice: &str) -> Self {
-    Self {
-      string: String::from(slice),
+    fn from(slice: &str) -> Self {
+        Self {
+            string: String::from(slice),
+        }
     }
-  }
 }
 
 impl Row {
-  pub fn render(&self, start: usize, end: usize) -> String {
-    let end = cmp::min(end, self.string.len());
-    let start = cmp::min(start, end);
-    self.string.get(start..end).unwrap_or_default().to_string()
-  }
+    pub fn render(&self, start: usize, end: usize) -> String {
+        let end = cmp::min(end, self.string.len());
+        let start = cmp::min(start, end);
+        let mut result = String::new();
+        for grpaheme in self.string[..]
+            .graphemes(true)
+            .skip(start)
+            .take(end - start)
+        {
+            result.push_str(grpaheme);
+        }
+        result
+    }
 
-  pub fn len(&self) -> usize {
-    self.string.len()
-  }
+    pub fn len(&self) -> usize {
+        self.string[..].graphemes(true).count()
+    }
 
-  pub fn is_empty(&self) -> bool {
-    self.string.is_empty()
-  }
+    pub fn is_empty(&self) -> bool {
+        self.string.is_empty()
+    }
 }
-
