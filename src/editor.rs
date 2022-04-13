@@ -113,8 +113,8 @@ impl Editor {
             self.draw_status_bar();
             self.draw_message_bar();
             Terminal::cursor_position(&Position {
-                x: self.cursor_position.x.saturating_add(self.offset.x),
-                y: self.cursor_position.y.saturating_add(self.offset.y),
+                x: self.cursor_position.x.saturating_sub(self.offset.x),
+                y: self.cursor_position.y.saturating_sub(self.offset.y),
             });
         }
         Terminal::cursor_show();
