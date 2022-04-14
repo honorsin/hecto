@@ -36,7 +36,9 @@ impl Terminal {
     
     #[allow(clippy::cast_possible_truncation)]
     pub fn cursor_position(position: &Position) {
-        let Position { mut x, mut y } = position;
+        let Position {  mut x,  mut y } = position;
+
+        // cursor 方法两个参数从1开始，因此要在偏移上加1
         x = x.saturating_add(1);
         y = y.saturating_add(1);
         let x = x as u16;
