@@ -100,14 +100,16 @@ impl Document {
         }
     }
 
-    pub fn find(&self, query: &str) ->Option<Position> {
-        for (index, row) in self.rows.iter().enumerate() {
-            if let Some(position) = row.find(query) {
+    pub fn find(&self, query: &str, after: &Position) ->Option<Position> {
+        let mut x = after.x;
+        for (y, row) in self.rows.iter().enumerate().skip(after.y) {
+            if let Some(x) = row.find(query, x) {
                 return Some(Position {
-                    x: position,
-                    y: index,
+                    x,
+                    y
                 });
             }
+            x = 0;
         }
         None
     }
