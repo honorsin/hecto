@@ -59,7 +59,7 @@ impl Editor {
 
     pub fn default() -> Self {
         let args: Vec<String> = env::args().collect();
-        let mut initial_status = String::from("help ctrl - s = save|ctrl-a = quit");
+        let mut initial_status = String::from("help ctrl-s = save|ctrl-f = search|ctrl-a = quit");
         let document = if args.len() > 1 {
             let file_name = &args[1];
             let doc = Document::open(&file_name);
@@ -95,7 +95,10 @@ impl Editor {
         let height = self.terminal.size().height;
         for terminal_row in 0..height {
             Terminal::clear_current_line();
-            if let Some(row) = self.document.row(self.offset.y.saturating_add(terminal_row as usize)) {
+            if let Some(row) = self
+                .document
+                .row(self.offset.y.saturating_add(terminal_row as usize))
+            {
                 self.draw_row(row);
             } else if self.document.is_empty() && terminal_row == height / 3 {
                 self.draw_welcome_message()
@@ -156,6 +159,18 @@ impl Editor {
                 self.should_quit = true
             }
             Key::Ctrl('s') => self.save(),
+            Key::Ctrl('f') => {
+                if let Some(query) = self.prompt("search").unwrap_or(None) {
+                    if let Some(position) = self.document.find(&query[..]) {
+                        self.cursor_position = position;
+                    } else {
+                        self.status_message = StatusMessage::from(format!(
+                            "\"{}\" not found",
+                            query
+                        ));
+                    }
+                }
+            }
             Key::Char(c) => {
                 self.document.insert(&self.cursor_position, c);
                 self.move_cursor(Key::Right);
