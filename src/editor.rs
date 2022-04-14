@@ -57,7 +57,7 @@ impl Editor {
 
     pub fn default() -> Self {
         let args: Vec<String> = env::args().collect();
-        let mut initial_status = String::from("help ctrl-a = quit");
+        let mut initial_status = String::from("help ctrl - s = save|ctrl-a = quit");
         let document = if args.len() > 1 {
             let file_name = &args[1];
             let doc = Document::open(&file_name);
@@ -125,10 +125,18 @@ impl Editor {
         let pressed_key = Terminal::read_key()?;
         match pressed_key {
             Key::Ctrl('a') => self.should_quit = true,
+            Key::Ctrl('s') => {
+                if self.document.save().is_ok() {
+                    self.status_message = StatusMessage::from("save successfully".to_string());
+                } else {
+                    self.status_message =
+                        StatusMessage::from(String::from("ERR: Could not save file"));
+                }
+            }
             Key::Char(c) => {
                 self.document.insert(&self.cursor_position, c);
                 self.move_cursor(Key::Right);
-            },
+            }
             Key::Delete => self.document.delete(&self.cursor_position),
             Key::Backspace => {
                 if self.cursor_position.x > 0 || self.cursor_position.y > 0 {
@@ -278,7 +286,6 @@ impl Editor {
         welcome_message.truncate(width);
         println!("{}\r", welcome_message);
     }
-
 }
 
 fn die(e: std::io::Error) {
