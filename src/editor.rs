@@ -12,7 +12,7 @@ const STATUS_BG_COLOR: color::Rgb = color::Rgb(239, 239, 239);
 const STATUS_FG_COLOR: color::Rgb = color::Rgb(63, 63, 63);
 const QUIT_TIMES: u8 = 3;
 
-#[derive(Default)]
+#[derive(Default, clone)]
 pub struct Position {
     pub x: usize,
     pub y: usize,
@@ -159,23 +159,7 @@ impl Editor {
                 self.should_quit = true
             }
             Key::Ctrl('s') => self.save(),
-            Key::Ctrl('f') => {
-                if let Some(query) = self.prompt("search", |editor, _, query|{
-                    if let Some(position) = editor.document.find(&query) {
-                        editor.cursor_position = position;
-                        editor.scroll();
-                    }
-                }).unwrap_or(None) {
-                    if let Some(position) = self.document.find(&query[..]) {
-                        self.cursor_position = position;
-                    } else {
-                        self.status_message = StatusMessage::from(format!(
-                            "\"{}\" not found",
-                            query
-                        ));
-                    }
-                }
-            }
+            Key::Ctrl('f') => self.search(),
             Key::Char(c) => {
                 self.document.insert(&self.cursor_position, c);
                 self.move_cursor(Key::Right);
@@ -205,8 +189,33 @@ impl Editor {
         Ok(())
     }
 
+    fn search(&mut self) {
+        let old_position = self.cursor_position.clone();
+
+        if let Some(query) = self
+            .prompt("search", |editor, _, query| {
+                if let Some(position) = editor.document.find(&query) {
+                    editor.cursor_position = position;
+                    editor.scroll();
+                }
+            })
+            .unwrap_or(None)
+        {
+            if let Some(position) = self.document.find(&query[..]) {
+                self.cursor_position = position;
+            } else {
+                self.status_message = StatusMessage::from(format!("\"{}\" not found", query));
+            }
+        } else {
+            self.cursor_position = old_position;
+            self.scroll();
+        }
+    }
+
     fn prompt<C>(&mut self, prompt: &str, callback: C) -> Result<Option<String>, std::io::Error>
-    where C: Fn(&mut Self, Key, &String) {
+    where
+        C: Fn(&mut Self, Key, &String),
+    {
         let mut result = String::new();
         loop {
             self.status_message = StatusMessage::from(format!("{}{}", prompt, result));
