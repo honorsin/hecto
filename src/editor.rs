@@ -197,7 +197,7 @@ impl Editor {
 
         self.status_message = StatusMessage::from("".to_string());
         if result.is_empty() {
-            return Ok(None)
+            return Ok(None);
         }
         Ok(Some(result))
     }
@@ -289,12 +289,22 @@ impl Editor {
     fn draw_status_bar(&self) {
         let mut status;
         let width = self.terminal.size().width as usize;
+        let modified_indicator = if self.document.is_dirty() {
+            " (modified)"
+        } else {
+            " "
+        };
         let mut file_name = "[No Name]".to_string();
         if let Some(name) = &self.document.file_name {
             file_name = name.clone();
             file_name.truncate(20);
         }
-        status = format!("{} - {} lines", file_name, self.document.len());
+        status = format!(
+            "{} - {} lines{}",
+            file_name,
+            self.document.len(),
+            modified_indicator
+        );
 
         let line_indicator = format!("{}/{}", self.cursor_position.y + 1, self.document.len());
         let len = status.len() + line_indicator.len();
