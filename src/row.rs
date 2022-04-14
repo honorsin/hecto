@@ -1,21 +1,22 @@
 use crate::SearchDirection;
+use crate::highlighting;
 use std::cmp;
+use termion::color;
 use unicode_segmentation::UnicodeSegmentation;
 #[derive(Default)]
 pub struct Row {
     string: String,
     len: usize,
+    highlighting: Vec<highlighting::Type>
 }
 
 impl From<&str> for Row {
     fn from(slice: &str) -> Self {
-        let mut row = Self {
+        Self {
             string: String::from(slice),
-            len: 0,
-        };
-
-        row.update_len();
-        row
+            highlighting: Vec::new(),
+            len: slice.graphemes(true).count(),
+        }
     }
 }
 
@@ -25,15 +26,26 @@ impl Row {
         let start = cmp::min(start, end);
         let mut result = String::new();
         #[allow(clippy::integer_arithmetic)]
-        for grpaheme in self.string[..]
+        for grapheme in self.string[..]
             .graphemes(true)
             .skip(start)
             .take(end - start)
         {
-            if grpaheme == "\t" {
-                result.push_str(" ");
-            } else {
-                result.push_str(grpaheme);
+            if let Some(c) = grapheme.chars().next() {
+                if c == '\t' {
+                    result.push_str(" ");
+                } else if c.is_ascii_digit() {
+                    result.push_str(
+                        &format!(
+                            "{}{}{}",
+                            termion::color::Fg(color::Rgb(220, 163, 163)),
+                            c,
+                            color::Fg(color::Reset)
+                        )[..],
+                    );
+                } else {
+                    result.push(c);
+                }
             }
         }
         result
@@ -47,45 +59,74 @@ impl Row {
         self.len == 0
     }
 
-    fn update_len(&mut self) {
-        self.len = self.string.graphemes(true).count();
-    }
+
 
     pub fn insert(&mut self, at: usize, c: char) {
         if at >= self.len() {
             self.string.push(c);
-        } else {
-            let mut result: String = self.string[..].graphemes(true).take(at).collect();
-            let remainder: String = self.string[..].graphemes(true).skip(at).collect();
-            result.push(c);
-            result.push_str(&remainder);
-            self.string = result;
+            self.len += 1;
+            return;
         }
-        self.update_len();
+        let mut result: String = String::new();
+        let mut length = 0;
+        for (index, grapheme) in self.string[..].graphemes(true).enumerate() {
+            length += 1;
+            if index == at {
+                length += 1;
+                result.push(c);
+            }
+            result.push_str(grapheme);
+        }
+        self.len = length;
+        self.string = result;
     }
 
     #[allow(clippy::integer_arithmetic)]
     pub fn delete(&mut self, at: usize) {
         if at < self.len() {
-            let mut result: String = self.string[..].graphemes(true).take(at).collect();
-            let remainder: String = self.string[..].graphemes(true).skip(at + 1).collect();
-            result.push_str(&remainder);
+            if at >= self.len() {
+                return;
+            }
+            let mut result: String = String::new();
+            let mut length = 0;
+            for (index, grapheme) in self.string[..].graphemes(true).enumerate() {
+                if index != at {
+                    length += 1;
+                    result.push_str(grapheme);
+                }
+            }
+            self.len = length;
             self.string = result;
         }
-        self.update_len();
     }
 
     pub fn append(&mut self, new: &Self) {
         self.string = format!("{}{}", self.string, new.string);
-        self.update_len();
+        self.len += new.len;
     }
 
     pub fn split(&mut self, at: usize) -> Self {
-        let beginning: String = self.string[..].graphemes(true).take(at).collect();
-        let remainder: String = self.string[..].graphemes(true).skip(at).collect();
-        self.string = beginning;
-        self.update_len();
-        Self::from(&remainder[..])
+        let mut row: String = String::new();
+        let mut length = 0;
+        let mut splitted_row: String = String::new();
+        let mut splitted_length = 0;
+        for (index, grapheme) in self.string[..].graphemes(true).enumerate() {
+            if index < at {
+                length += 1;
+                row.push_str(grapheme);
+            } else {
+                splitted_length += 1;
+                splitted_row.push_str(grapheme);
+            }
+        }
+
+        self.string = row;
+        self.len = length;
+        Self {
+            string: splitted_row,
+            len: splitted_length,
+            highlighting: Vec::new(),
+        }
     }
 
     pub fn as_bytes(&self) -> &[u8] {
