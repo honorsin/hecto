@@ -12,7 +12,7 @@ pub use editor::Position;
 
 pub use editor::SearchDirection;
 pub use filetype::FileType;
-pub use filetype::HighlightOptions;
+pub use filetype::HighlightingOptions;
 pub use row::Row;
 pub use terminal::Terminal;
 fn main() {
