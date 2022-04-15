@@ -23,7 +23,7 @@ impl FileType {
         self.name.clone()
     }
 
-    pub fn highlight_options(&self) -> HighlightOptions {
+    pub fn highlighting_options(&self) -> HighlightOptions {
         self.hl_opts
     }
 
