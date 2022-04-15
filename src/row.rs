@@ -1,4 +1,5 @@
 use crate::highlighting;
+use crate::HighlightOptions;
 use crate::SearchDirection;
 use std::cmp;
 use termion::color;
@@ -172,7 +173,7 @@ impl Row {
         }
         None
     }
-    pub fn highlight(&mut self, word: Option<&str>) {
+    pub fn highlight(&mut self, opts: HighlightOptions, word: Option<&str>) {
         let mut highlighting = Vec::new();
         let chars: Vec<char> = self.string.chars().collect();
         let mut matches = Vec::new();
@@ -190,7 +191,7 @@ impl Row {
             }
         }
 
-        let mut prev_is_seperator = true;
+        let mut prev_is_separator = true;
         let mut index = 0;
         while let Some(c) = chars.get(index) {
             if let Some(word) = word {
@@ -212,16 +213,20 @@ impl Row {
                 &highlighting::Type::None
             };
 
-            if (c.is_ascii_digit()
-                && (prev_is_seperator || previous_highlight == &highlighting::Type::Number))
-                || (c == &'.' && previous_highlight == &highlighting::Type::Number)
-            {
-                highlighting.push(highlighting::Type::Number);
+            if opts.numbers() {
+                if (c.is_ascii_digit()
+                    && (prev_is_separator || previous_highlight == &highlighting::Type::Number))
+                    || (c == &'.' && previous_highlight == &highlighting::Type::Number)
+                {
+                    highlighting.push(highlighting::Type::Number);
+                } else {
+                    highlighting.push(highlighting::Type::None);
+                }
             } else {
                 highlighting.push(highlighting::Type::None);
             }
 
-            prev_is_seperator = c.is_ascii_whitespace() || c.is_ascii_punctuation();
+            prev_is_separator = c.is_ascii_whitespace() || c.is_ascii_punctuation();
             index += 1;
         }
 

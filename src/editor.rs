@@ -375,7 +375,7 @@ impl Editor {
             modified_indicator
         );
 
-        let line_indicator = format!("{}/{}", self.cursor_position.y + 1, self.document.len());
+        let line_indicator = format!("{} | {}/{}", self.document.file_type(), self.cursor_position.y.saturating_add(1), self.document.len());
         let len = status.len() + line_indicator.len();
         status.push_str(&" ".repeat(width.saturating_sub(len)));
 
