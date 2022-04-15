@@ -45,6 +45,7 @@ pub struct Editor {
     document: Document,
     status_message: StatusMessage,
     quit_times: u8,
+    highlighted_word: Option<String>,
 }
 
 impl Editor {
@@ -86,6 +87,7 @@ impl Editor {
             offset: Position::default(),
             status_message: StatusMessage::from(initial_status),
             quit_times: QUIT_TIMES,
+            highlighted_word: None,
         }
     }
 
@@ -114,13 +116,21 @@ impl Editor {
         }
     }
 
-    fn refresh_screen(&self) -> Result<(), std::io::Error> {
+    fn refresh_screen(&mut self) -> Result<(), std::io::Error> {
         Terminal::cursor_hide();
         Terminal::cursor_position(&Position::default());
         if self.should_quit {
             Terminal::clear_screen();
             println!("editor closed\r");
         } else {
+            self.document.highlight(
+                &self.highlighted_word,
+                Some(
+                    self.offset
+                        .y
+                        .saturating_add(self.terminal.size().height as usize),
+                ),
+            );
             self.draw_rows();
             self.draw_status_bar();
             self.draw_message_bar();
@@ -223,7 +233,7 @@ impl Editor {
                     } else if moved {
                         editor.move_cursor(Key::Left);
                     }
-                    editor.document.highlight(Some(query));
+                    editor.highlighted_word = Some(query.to_string());
                 },
             )
             .unwrap_or(None);
@@ -233,7 +243,7 @@ impl Editor {
             self.scroll();
         }
 
-        self.document.highlight(None);
+        self.highlighted_word = None;
     }
 
     fn prompt<C>(&mut self, prompt: &str, mut callback: C) -> Result<Option<String>, std::io::Error>
@@ -375,7 +385,12 @@ impl Editor {
             modified_indicator
         );
 
-        let line_indicator = format!("{} | {}/{}", self.document.file_type(), self.cursor_position.y.saturating_add(1), self.document.len());
+        let line_indicator = format!(
+            "{} | {}/{}",
+            self.document.file_type(),
+            self.cursor_position.y.saturating_add(1),
+            self.document.len()
+        );
         let len = status.len() + line_indicator.len();
         status.push_str(&" ".repeat(width.saturating_sub(len)));
 
